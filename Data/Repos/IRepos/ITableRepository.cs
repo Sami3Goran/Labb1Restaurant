@@ -8,10 +8,12 @@ namespace Labb1Restaurant.Data.Repos.IRepos
         Task<Table> GetTableByIdAsync(int tableId);
         Task<IEnumerable<Booking>> GetTableBookingConnectionByIdAsync(int tableId);
 
+        Task<IEnumerable<Table>> GetAvailableTablesAsync(int guestAttending);
+
         Task AddTableAsync(Table table);
 
         Task UpdateTableAsync(Table table);
 
-        Task DeleteTableAsync(int tableId);
+        Task DeleteTableAsync(Table table);
     }
 }

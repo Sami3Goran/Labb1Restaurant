@@ -20,7 +20,7 @@ namespace Labb1Restaurant.Controllers
 
         [HttpGet]
         [Route("GetAllCustomers")]
-        public async Task<ActionResult<IEnumerable<CustomerInfoAllDTO>>> GetAllCustomers()
+        public async Task<ActionResult<IEnumerable<CustomerShortDTO>>> GetAllCustomers()
         {
             var customerList = await _customerService.GetAllCustomersAsync();
 
@@ -33,10 +33,10 @@ namespace Labb1Restaurant.Controllers
         }
 
         [HttpGet]
-        [Route("GetCustomerById/{customerId}")]
-        public async Task<ActionResult<CustomerInfoAllDTO>> GetCustomerById(int customerId)
+        [Route("GetCustomerById/{id}")]
+        public async Task<ActionResult<CustomerInfoAllDTO>> GetCustomerById(int id)
         {
-            var customer = await _customerService.GetCustomerByIdAsync(customerId);
+            var customer = await _customerService.GetCustomerByIdAsync(id);
 
             if (customer == null)
             {
@@ -48,19 +48,19 @@ namespace Labb1Restaurant.Controllers
 
         [HttpGet]
         [Route("GetCustomerByLastName/{lastName}")]
-        public async Task<ActionResult<Customer>> GetCustomerByLastName(string lastName)
+        public async Task<ActionResult<CustomerInfoAllDTO>> GetCustomerByLastName(string lastName)
         {
-            var LastNameC = await _customerService.GetCustomerByLastNameAsync(lastName);
-            if (LastNameC == null)
+            var lastNameC = await _customerService.GetCustomerByLastNameAsync(lastName);
+            if (lastNameC == null)
             {
                 return NotFound(new { Error = $"Couldnt find customer with surname:{lastName}" });
             }
-            return Ok(LastNameC);
+            return Ok(lastNameC);
         }
 
         [HttpPost]
         [Route("AddCustomer")]
-        public async Task<ActionResult> AddCustomer(CustomerDTO customer)
+        public async Task<ActionResult> AddCustomer([FromBody]CustomerDTO customer)
         {
             try
             {
@@ -75,28 +75,28 @@ namespace Labb1Restaurant.Controllers
         }
 
         [HttpPut]
-        [Route("UpdateCustomer/{CustomerId}")]
-        public async Task<ActionResult> UpdateCustomer(int customerId, CustomerDTO customer)
+        [Route("UpdateCustomer/{id}")]
+        public async Task<ActionResult> UpdateCustomer(int id, [FromBody]CustomerDTO customer)
         {
             try
             {
-                await _customerService.UpdateCustomerAsync(customerId, customer);
+                await _customerService.UpdateCustomerAsync(id, customer);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
 
-            return Ok("successfull customer Update");
+            return Ok("Customer has been updated!");
         }
 
         [HttpDelete]
-        [Route("/DeleteCustomer/{customerId}")]
-        public async Task<IActionResult> DeleteCustomerAsync(int customerId)
+        [Route("DeleteCustomer/{id}")]
+        public async Task<IActionResult> DeleteCustomerAsync(int id)
         {
             try
             {
-                await _customerService.DeleteCustomerAsync(customerId);
+                await _customerService.DeleteCustomerAsync(id);
             }
 
             catch (Exception ex)

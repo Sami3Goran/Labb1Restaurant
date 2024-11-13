@@ -19,16 +19,16 @@ namespace Labb1Restaurant.Data.Repos
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteDishAsync(int menuId)
+        public async Task DeleteFoodAsync(Menu menu)
         {
-            var dish = await _context.Menus.FindAsync();
-
-            if (dish != null)
-            {
-                _context.Menus.Remove(dish);
-            }
-
+            _context.Menus.Remove(menu);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<Menu>> GetAllAvailableFoodMenuAsync()
+        {
+            var availableFood = await _context.Menus.Where(food => food.IsAvailable).ToListAsync();
+            return availableFood;
         }
 
         public async Task<IEnumerable<Menu>> GetAllMenusAsync()
@@ -37,7 +37,13 @@ namespace Labb1Restaurant.Data.Repos
             return menuList;
         }
 
-        public async Task<Menu> GetDishByIdAsync(int menuId)
+        public async Task<IEnumerable<Menu>> GetAllPopularFoodMenuAsync()
+        {
+            var popularFood = await _context.Menus.Where(food => food.IsPopular).ToListAsync();
+            return popularFood;
+        }
+
+        public async Task<Menu> GetFoodByIdAsync(int menuId)
         {
             var menu = await _context.Menus.FindAsync(menuId);
             return menu;

@@ -6,12 +6,13 @@ namespace Labb1Restaurant.Services.IServices
     public interface IMenuService
     {
         Task<IEnumerable<MenuInfoAllDTO>> GetAllMenusAsync(); 
-        Task<MenuInfoAllDTO> GetDishByIdAsync(int menuId); 
-
+        Task<MenuInfoAllDTO> GetFoodByIdAsync(int menuId);
+        Task<IEnumerable<MenuInfoAllDTO>> GetAllPopularFoodMenuAsync();
+        Task<IEnumerable<MenuInfoAllDTO>> GetAllAvailableFoodMenuAsync();
         Task AddFoodAsync(MenuDTO menu); 
 
         Task UpdateMenuAsync(int menuId, MenuDTO menu); 
 
-        Task DeleteDishAsync(int menuId);
+        Task DeleteFoodAsync(int menuId);
     }
 }

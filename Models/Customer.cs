@@ -5,7 +5,7 @@ namespace Labb1Restaurant.Models
     public class Customer
     {
         [Key]
-        public int CustomerId { get; set; }
+        public int Id { get; set; }
 
         [Required]
         [StringLength(60, MinimumLength = 2)]
@@ -24,6 +24,6 @@ namespace Labb1Restaurant.Models
         public string Email { get; set; }
 
         [Required]
-        public virtual ICollection<Booking> Bookings { get; set; }
+        public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }

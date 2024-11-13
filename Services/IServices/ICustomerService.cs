@@ -5,13 +5,13 @@ namespace Labb1Restaurant.Services.IServices
 {
     public interface ICustomerService
     {
-        Task<IEnumerable<CustomerInfoAllDTO>> GetAllCustomersAsync();
+        Task<IEnumerable<CustomerShortDTO>> GetAllCustomersAsync();
         Task<CustomerInfoAllDTO> GetCustomerByLastNameAsync(string lastName);
         Task<CustomerInfoAllDTO> GetCustomerByIdAsync(int customerId);
 
-        Task AddCustomerAsync(CustomerDTO customerAdd);
+        Task AddCustomerAsync(CustomerDTO customer);
 
-        Task UpdateCustomerAsync(int customerId, CustomerDTO customerNew);
+        Task UpdateCustomerAsync(int customerId, CustomerDTO customer);
 
         Task DeleteCustomerAsync(int customerId);
     }

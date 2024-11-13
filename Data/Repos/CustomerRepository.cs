@@ -20,14 +20,9 @@ namespace Labb1Restaurant.Data.Repos
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteCustomerAsync(int customerId)
+        public async Task DeleteCustomerAsync(Customer customer)
         {
-            var customer = await _context.Customers.FindAsync(customerId);
-            if (customer != null)
-            {
-                _context.Customers.Remove(customer);
-            }
-
+            _context.Customers.Remove(customer);
             await _context.SaveChangesAsync();
         }
 
@@ -51,17 +46,7 @@ namespace Labb1Restaurant.Data.Repos
 
         public async Task UpdateCustomerAsync(Customer customer)
         {
-            var existingCustomer = await _context.Customers.FindAsync(customer.CustomerId);
-            if (existingCustomer != null)
-            {
-                existingCustomer.FirstName = customer.FirstName;
-                existingCustomer.LastName = customer.LastName;
-                existingCustomer.PhoneNumber = customer.PhoneNumber;
-                existingCustomer.Email = customer.Email;
-
-                _context.Customers.Update(existingCustomer);
-            }
-
+            _context.Customers.Update(customer);
             await _context.SaveChangesAsync();
         }
     }

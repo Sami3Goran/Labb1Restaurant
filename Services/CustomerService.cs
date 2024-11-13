@@ -16,15 +16,15 @@ namespace Labb1Restaurant.Services
         }
 
 
-        public async Task AddCustomerAsync(CustomerDTO customerAdd)
+        public async Task AddCustomerAsync(CustomerDTO customer)
         {
 
             var newCustomer = new Customer
             {
-                FirstName = customerAdd.FirstName,
-                LastName = customerAdd.LastName,
-                PhoneNumber = customerAdd.PhoneNumber,
-                Email = customerAdd.Email,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                PhoneNumber = customer.PhoneNumber,
+                Email = customer.Email,
             };
 
             await _customerRepo.AddCustomerAsync(newCustomer);
@@ -33,21 +33,23 @@ namespace Labb1Restaurant.Services
         public async Task DeleteCustomerAsync(int customerId)
         {
             var customer = await _customerRepo.GetCustomerByIdAsync(customerId);
-            if (customer == null) throw new ArgumentException("Customer not found.");
+            if (customer == null)
+            {
+                throw new ArgumentException($"This customer with ID:{customerId} does not exist, try another ID?");
+            }
 
-            await _customerRepo.DeleteCustomerAsync(customerId);
+            await _customerRepo.DeleteCustomerAsync(customer);
         }
 
-        public async Task<IEnumerable<CustomerInfoAllDTO>> GetAllCustomersAsync()
+        public async Task<IEnumerable<CustomerShortDTO>> GetAllCustomersAsync()
         {
             var allCustomrs = await _customerRepo.GetAllCustomersAsync();
 
-            return allCustomrs.Select(c => new CustomerInfoAllDTO
+            return allCustomrs.Select(c => new CustomerShortDTO
             {
-                CustomerId = c.CustomerId,
+                Id = c.Id,
                 FirstName = c.FirstName,
                 LastName = c.LastName,
-                PhoneNumber = c.PhoneNumber,
                 Email = c.Email
             }).ToList();
         }
@@ -55,14 +57,14 @@ namespace Labb1Restaurant.Services
         public async Task<CustomerInfoAllDTO> GetCustomerByIdAsync(int customerId)
         {
             var customer = await _customerRepo.GetCustomerByIdAsync(customerId);
-            if (customer == null) 
+            if (customer == null)
             {
-                throw new Exception($"Customer Does not exist.");
+                throw new Exception($"This customer with ID:{customerId} does not exist, try another ID?");
             }
 
             return new CustomerInfoAllDTO
             {
-                CustomerId = customer.CustomerId,
+                Id = customer.Id,
                 FirstName = customer.FirstName,
                 LastName = customer.LastName,
                 PhoneNumber = customer.PhoneNumber,
@@ -73,14 +75,14 @@ namespace Labb1Restaurant.Services
         public async Task<CustomerInfoAllDTO> GetCustomerByLastNameAsync(string lastName)
         {
             var thisCustomer = await _customerRepo.GetCustomerByLastNameAsync(lastName);
-            if (thisCustomer == null) 
+            if (thisCustomer == null)
             {
-                throw new Exception($"Customer not found.");
+                throw new Exception($"No customer with the lastname: {lastName}");
             }
 
             return new CustomerInfoAllDTO
             {
-               CustomerId = thisCustomer.CustomerId,
+                Id = thisCustomer.Id,
                 FirstName = thisCustomer.FirstName,
                 LastName = thisCustomer.LastName,
                 PhoneNumber = thisCustomer.PhoneNumber,
@@ -88,20 +90,22 @@ namespace Labb1Restaurant.Services
             };
         }
 
-        public async Task UpdateCustomerAsync(int customerId, CustomerDTO customerNew)
+        public async Task UpdateCustomerAsync(int customerId, CustomerDTO customer)
         {
-            var updateCustomer = await _customerRepo.GetCustomerByIdAsync(customerId);
-            if (updateCustomer == null)
+            var customerUp = await _customerRepo.GetCustomerByIdAsync(customerId);
+
+            if (customerUp == null)
             {
-                throw new InvalidOperationException("Customer Not Found.");
+                throw new InvalidOperationException("This customer doesn't exist, try again please.");
             }
 
-            updateCustomer.FirstName = customerNew.FirstName;
-            updateCustomer.LastName = customerNew.LastName;
-            updateCustomer.Email = customerNew.Email;
-            updateCustomer.PhoneNumber = customerNew.PhoneNumber;
+            customerUp.FirstName = customer.FirstName;
+            customerUp.LastName = customer.LastName;
+            customerUp.Email = customer.Email;
+            customerUp.PhoneNumber = customer.PhoneNumber;
 
-            await _customerRepo.UpdateCustomerAsync(updateCustomer);
+            await _customerRepo.UpdateCustomerAsync(customerUp);
         }
+
     }
 }

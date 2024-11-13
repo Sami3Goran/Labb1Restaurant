@@ -9,9 +9,11 @@ namespace Labb1Restaurant.Services
     public class MenuService : IMenuService
     {
         private readonly IMenuRepository _menuRepo;
-        public MenuService(IMenuRepository menuRepos)
+        private readonly ILogger<MenuService> _logger;
+        public MenuService(IMenuRepository menuRepos, ILogger<MenuService> logger)
         {
             _menuRepo = menuRepos;
+            _logger = logger;
         }
 
         public async Task AddFoodAsync(MenuDTO menu)
@@ -25,20 +27,37 @@ namespace Labb1Restaurant.Services
             {
                 FoodName = menu.FoodName,
                 FoodPrice = menu.FoodPrice,
-                IsAvailable = menu.IsAvailable,
+                FoodInfo = menu.FoodInfo,
+                IsPopular = menu.IsPopular,
+                IsAvailable = menu.IsAvailable
             });
         }
 
-        public async Task DeleteDishAsync(int menuId)
+        public async Task DeleteFoodAsync(int menuId)
         {
-            var Food = await _menuRepo.GetDishByIdAsync(menuId);
+            var food = await _menuRepo.GetFoodByIdAsync(menuId);
 
-            if (Food == null)
+            if (food != null)
             {
-                throw new Exception($"Food with ID: {menuId} not found");
+                await _menuRepo.DeleteFoodAsync(food);
             }
 
-            await _menuRepo.DeleteDishAsync(menuId);
+            throw new Exception($"Food with ID: {menuId} not found");
+
+        }
+
+        public async Task<IEnumerable<MenuInfoAllDTO>> GetAllAvailableFoodMenuAsync()
+        {
+            var availableFoods = await _menuRepo.GetAllAvailableFoodMenuAsync();
+            return availableFoods.Select(f => new MenuInfoAllDTO
+            {
+                Id = f.Id,
+                FoodName = f.FoodName,
+                FoodPrice = f.FoodPrice,
+                FoodInfo = f.FoodInfo,
+                IsPopular = f.IsPopular,
+                IsAvailable = f.IsAvailable
+            }).ToList();
         }
 
         public async Task<IEnumerable<MenuInfoAllDTO>> GetAllMenusAsync()
@@ -46,39 +65,63 @@ namespace Labb1Restaurant.Services
             var menuList = await _menuRepo.GetAllMenusAsync();
             return menuList.Select(m => new MenuInfoAllDTO
             {
-                MenuId = m.MenuId,
+                Id = m.Id,
                 FoodName = m.FoodName,
+                FoodInfo = m.FoodInfo,
                 FoodPrice = m.FoodPrice,
-                IsAvailable = m.IsAvailable,
+                IsPopular = m.IsPopular,
+                IsAvailable = m.IsAvailable
             }).ToList();
         }
 
-        public async Task<MenuInfoAllDTO> GetDishByIdAsync(int menuId)
+        public async Task<IEnumerable<MenuInfoAllDTO>> GetAllPopularFoodMenuAsync()
         {
-            var singleMenu = await _menuRepo.GetDishByIdAsync(menuId);
+            var popularFoods = await _menuRepo.GetAllPopularFoodMenuAsync();
+            return popularFoods.Select(f => new MenuInfoAllDTO
+            {
+                Id = f.Id,
+                FoodName = f.FoodName,
+                FoodInfo = f.FoodInfo,
+                FoodPrice = f.FoodPrice,
+                IsPopular = f.IsPopular,
+                IsAvailable = f.IsAvailable
+            }).ToList();
+        }
+
+        public async Task<MenuInfoAllDTO> GetFoodByIdAsync(int menuId)
+        {
+            var singleMenu = await _menuRepo.GetFoodByIdAsync(menuId);
+
             if (singleMenu == null)
             {
-                throw new KeyNotFoundException($"Menu item with Id.{menuId} was not found!");
+                // Logga ett varningsmeddelande om det behövs
+                _logger.LogWarning($"Menu item with Id {menuId} not found");
+                return null; // Returnera null istället för att kasta ett undantag
             }
+
             return new MenuInfoAllDTO
             {
-                MenuId = singleMenu.MenuId,
+                Id = singleMenu.Id,
                 FoodName = singleMenu.FoodName,
+                FoodInfo = singleMenu.FoodInfo,
                 FoodPrice = singleMenu.FoodPrice,
-                IsAvailable = singleMenu.IsAvailable,
+                IsPopular = singleMenu.IsPopular,
+                IsAvailable = singleMenu.IsAvailable
             };
         }
 
         public async Task UpdateMenuAsync(int menuId, MenuDTO menu)
         {
-            var menuUp = await _menuRepo.GetDishByIdAsync(menuId);
+            var menuUp = await _menuRepo.GetFoodByIdAsync(menuId);
             if (menuUp == null)
             {
-                throw new ArgumentException("The menu does not exist.");
+                throw new InvalidOperationException("The menu does not exist.");
             }
 
             menuUp.FoodName = menu.FoodName;
+            menuUp.FoodInfo = menu.FoodInfo;
             menuUp.FoodPrice = menu.FoodPrice;
+            menuUp.IsPopular = menu.IsPopular;
             menuUp.IsAvailable = menu.IsAvailable;
 
             await _menuRepo.UpdateMenuAsync(menuUp);

@@ -3,6 +3,7 @@ using Labb1Restaurant.Models;
 using Labb1Restaurant.Models.DTOs.Booking;
 using Labb1Restaurant.Services.IServices;
 using Microsoft.EntityFrameworkCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Labb1Restaurant.Services
 {
@@ -18,83 +19,175 @@ namespace Labb1Restaurant.Services
             _tableRepository = tableRepository;
         }
 
-        public async Task AddBookingAsync(int customerId, BookingInfoAllDTO booking)
+        public async Task AddBookingAsync(BookingDTO booking)
         {
-
-            var newCustomer = await _customerRepository.GetCustomerByIdAsync(customerId);
-
-            if (newCustomer == null)
+            
+            var guestTable = await _tableRepository.GetTableByIdAsync(booking.TableId);
+            if (guestTable == null)
             {
-                throw new Exception("There must be a customer input.");
+                throw new InvalidOperationException($"Table with ID:{booking.TableId} Does not exist");
             }
 
-            var TimeAvailabilty = await IsTableAvailableAsync(booking.FK_TableId, booking.BookingStart, booking.BookingEnd);
+            var bookDuration = booking.BookingStart.Add(new TimeSpan(2, 0, 0));
 
-            if (TimeAvailabilty)
+            var ifTableOccupied = await _bookingRepository.IsTableAvailableAsync(booking.TableId, booking.BookingDate, booking.BookingStart, bookDuration);
+
+            if (ifTableOccupied)
             {
-                throw new Exception("Time is already booked, Please pick another date");
+                throw new InvalidOperationException($"This table with ID: {booking.TableId} is already booked, be so kind and change booking time");
             }
 
-            var newBooking = new Booking
+            if (booking.GuestAttending < 1 || booking.GuestAttending > 8)
             {
-                BookingStart = booking.BookingStart,
-                BookingEnd = booking.BookingEnd,
+                throw new InvalidOperationException($"There can only be between 1 to 8 guests at a time");
+            }
+
+            var BookedCustomer = await _customerRepository.GetCustomerByLastNameAsync(booking.LastName);
+            Customer customer;
+
+            if (BookedCustomer == null)
+            {
+                customer = new Customer
+                {
+                    FirstName = booking.FirstName,
+                    LastName = booking.LastName,
+                    PhoneNumber = booking.CustomersPhoneNo,
+                    Email = booking.Email
+                };
+                await _customerRepository.AddCustomerAsync(customer);
+            }
+            else
+            {
+                customer = BookedCustomer;
+            }
+
+            var bookNew = new Booking
+            {
+                FK_TableId = booking.TableId,
+                FK_CustomerId = customer.Id,
                 GuestAttending = booking.GuestAttending,
-                FK_CustomerId = newCustomer.CustomerId,
-                FK_TableId = booking.FK_TableId
-
+                BookingDate = booking.BookingDate,
+                BookingStart = booking.BookingStart,
+                BookingEnd = bookDuration
             };
 
-            await _bookingRepository.AddBookingAsync(newBooking);
+            await _bookingRepository.AddBookingAsync(bookNew);
         }
 
         public async Task DeleteBookingAsync(int bookingId)
         {
-            await _bookingRepository.DeleteBookingAsync(bookingId);
-        }
-
-        public async Task<IEnumerable<BookingInfoAllDTO>> GetAllBookingsAsync()
-        {
-            var allBookings = await _bookingRepository.GetAllBookingsAsync();
-            if (allBookings == null)
+            var bookings = await _bookingRepository.GetBookingByIdAsync(bookingId);
+            if (bookings == null)
             {
-                throw new Exception("There is 0 booked tables");
+                throw new InvalidOperationException("This booking doesn't exist");
             }
 
-            return allBookings.Select(booking => new BookingInfoAllDTO
+            await _bookingRepository.DeleteBookingAsync(bookings);
+        }
+
+        public async Task<IEnumerable<BookingPersonDTO>> GetAllBookingsAsync()
+        {
+            var listOFbooking = await _bookingRepository.GetAllBookingsAsync();
+            return listOFbooking.Select(b => new BookingPersonDTO
             {
-                BookingId = booking.BookingId,
-                FK_CustomerId = booking.FK_CustomerId,
-                CustomerFullName = $"{booking.Customer.FirstName} {booking.Customer.LastName}",
-                CustomersPhoneNo = booking.Customer.PhoneNumber,
-                GuestAttending = booking.GuestAttending,
-                BookingStart = booking.BookingStart,
-                BookingEnd = booking.BookingEnd,
-                FK_TableId = booking.FK_TableId,
-                TableNumber = booking.Table.TableNumber,
+                Id = b.Id,
+                CustomerId = b.FK_CustomerId,
+                TableId = b.FK_TableId,
+                CustomerFullName = $"{b.Customer.FirstName} {b.Customer.LastName}",
+                TableNumber = b.Table.TableNumber,
+                BookingDate = b.BookingDate,
+                BookingStart = b.BookingStart,
+                BookingEnd = b.BookingEnd
+            }).ToList();
+        }
+
+        public async Task<IEnumerable<BookingPersonDTO>> GetBookingByCustomerIdAsync(int customerId)
+        {
+            var booking = await _bookingRepository.GetBookingByCustomerIdAsync(customerId);
+            return booking.Select(b => new BookingPersonDTO
+            {
+                Id = b.Id,
+                CustomerId = b.FK_CustomerId,
+                TableId = b.FK_TableId,
+                CustomerFullName = $"{b.Customer.FirstName} {b.Customer.LastName}",
+                TableNumber = b.Table.TableNumber,
+                BookingDate = b.BookingDate,
+                BookingStart = b.BookingStart,
+                BookingEnd = b. BookingEnd
+            }).ToList();
+        }
+
+        public async Task<IEnumerable<BookingPersonDTO>> GetBookingByDateAsync(DateTime date)
+        {
+            var booking = await _bookingRepository.GetBookingByDateAsync(date);
+            return booking.Select(b => new BookingPersonDTO
+            {
+                Id = b.Id,
+                CustomerId = b.FK_CustomerId,
+                TableId = b.FK_TableId,
+                CustomerFullName = $"{b.Customer.FirstName} {b.Customer.LastName}",
+                TableNumber = b.Table.TableNumber,
+                BookingDate = b.BookingDate,
+                BookingStart = b.BookingStart,
+                BookingEnd = b.BookingEnd
             }).ToList();
         }
 
         public async Task<BookingInfoAllDTO> GetBookingByIdAsync(int bookingId)
         {
-            var theBooking = await _bookingRepository.GetBookingByIdAsync(bookingId);
-            if (theBooking == null) { return null; }
+            var bookings = await _bookingRepository.GetBookingByIdAsync(bookingId);
+            if (bookings == null)
+            {
+                throw new Exception($"This booking with booking ID:{bookingId} does not exist");
+            }
 
             return new BookingInfoAllDTO
             {
-                BookingId = theBooking.BookingId,
-                FK_CustomerId = theBooking.FK_CustomerId,
-                CustomerFullName = $"{theBooking.Customer.FirstName} {theBooking.Customer.LastName}",
-                CustomersPhoneNo = theBooking.Customer.PhoneNumber,
-                GuestAttending = theBooking.GuestAttending,
-                BookingStart = theBooking.BookingStart,
-                BookingEnd = theBooking.BookingEnd,
-                FK_TableId = theBooking.Table.TableId,
-                TableNumber = theBooking.Table.TableNumber,
+                Id = bookings.Id,
+                TableId = bookings.FK_TableId,
+                CustomerId = bookings.FK_CustomerId,
+                GuestAttending = bookings.GuestAttending,
+                TableNumber = bookings.Table.TableNumber,
+                CustomerFullName = $"{bookings.Customer.FirstName} {bookings.Customer.LastName}",
+                BookingDate = bookings.BookingDate,
+                BookingStart = bookings.BookingStart,
+                BookingEnd = bookings.BookingEnd
             };
         }
 
-        public async Task<bool> IsTableAvailableAsync(int tableId, DateTime bookingStart, DateTime bookingEnd)
+        public async Task<IEnumerable<BookingPersonDTO>> GetBookingByTableIdAndDateAsync(int tableId, DateTime date)
+        {
+            var booking = await _bookingRepository.GetBookingByTableIdAndDateAsync(tableId, date);
+            return booking.Select(b => new BookingPersonDTO
+            {
+                Id = b.Id,
+                CustomerId = b.FK_CustomerId,
+                TableId = b.FK_TableId,
+                CustomerFullName = $"{b.Customer.FirstName} {b.Customer.LastName}",
+                TableNumber = b.Table.TableNumber,
+                BookingDate = b.BookingDate,
+                BookingStart = b.BookingStart,
+                BookingEnd = b.BookingEnd
+            }).ToList();
+        }
+
+        public async Task<IEnumerable<BookingPersonDTO>> GetBookingByTableIdAsync(int tableId)
+        {
+            var booking = await _bookingRepository.GetBookingByTableIdAsync(tableId);
+            return booking.Select(b => new BookingPersonDTO
+            {
+                Id = b.Id,
+                CustomerId = b.FK_CustomerId,
+                TableId = b.FK_TableId,
+                CustomerFullName = $"{b.Customer.FirstName} {b.Customer.LastName}",
+                TableNumber = b.Table.TableNumber,
+                BookingDate = b.BookingDate,
+                BookingStart = b.BookingStart,
+                BookingEnd = b.BookingEnd
+            }).ToList();
+        }
+
+        public async Task<bool> IsTableAvailableAsync(int tableId, TimeSpan bookingStart, TimeSpan bookingEnd)
         {
             var bookingsList = await _tableRepository.GetTableBookingConnectionByIdAsync(tableId);
 
@@ -114,27 +207,42 @@ namespace Labb1Restaurant.Services
             return true;
         }
 
-        public async Task UpdateBookingAsync(int bookingId, BookingInfoAllDTO bookingUp)
+        public async Task UpdateBookingAsync(UpdateBookingDTO booking)
         {
-            var bookingToUpdate = await _bookingRepository.GetBookingByIdAsync(bookingId);
-
-            var checkingTable = await _tableRepository.GetTableByIdAsync(bookingToUpdate.FK_TableId);
-
-            var availableBooking = await IsTableAvailableAsync(checkingTable.TableId, bookingUp.BookingStart, bookingUp.BookingEnd);
-
-            if (!availableBooking)
+            var activeBooking = await _bookingRepository.GetBookingByIdAsync(booking.Id);
+            if (activeBooking == null)
             {
-                throw new Exception("This table and time is already booked");
+                throw new InvalidOperationException($"Booking with ID: {booking.Id} does not exist");
             }
 
-            var newBooking = new Booking
+            var tableOfGuest = await _tableRepository.GetTableByIdAsync(booking.TableId);
+            if (tableOfGuest == null)
             {
-                GuestAttending = bookingToUpdate.GuestAttending,
-                BookingStart = bookingToUpdate.BookingStart,
-                BookingEnd = bookingToUpdate.BookingEnd,
-            };
+                throw new InvalidOperationException($"Table with ID: {booking.TableId} does not exist");
+            }
 
-            await _bookingRepository.UpdateBookingAsync(newBooking);
+            var dinnerCompletion = booking.BookingStart.Add(new TimeSpan(2, 0, 0));
+
+            var tableOccupied = await _bookingRepository.IsTableAvailableAsync(booking.TableId, booking.BookingDate, booking.BookingStart, dinnerCompletion, activeBooking.Id);
+
+            if (tableOccupied)
+            {
+                throw new InvalidOperationException($"Table with ID: {booking.TableId} is already booked, please pick another table");
+            }
+
+            if (booking.GuestAttending < 1 || booking.GuestAttending > 20)
+            {
+                throw new InvalidOperationException($"There can only attend between 1 to 20 guest at the time.");
+            }
+
+            activeBooking.GuestAttending = booking.GuestAttending;
+            activeBooking.BookingDate = booking.BookingDate;
+            activeBooking.BookingStart = booking.BookingStart;
+            activeBooking.BookingEnd = dinnerCompletion;
+            activeBooking.FK_TableId = booking.TableId;
+
+            await _bookingRepository.UpdateBookingAsync(activeBooking);
         }
+
     }
 }

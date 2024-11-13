@@ -19,22 +19,24 @@ namespace Labb1Restaurant.Data.Repos
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteTableAsync(int tableId)
+        public async Task DeleteTableAsync(Table table)
         {
-            var table = await _context.Tables.FindAsync(tableId);
-
-            if (table != null)
-            {
-                _context.Tables.Remove(table);
-            }
-
-            await _context.SaveChangesAsync();
+            _context.Tables.Remove(table);
+            await _context.SaveChangesAsync(); ;
         }
 
         public async Task<IEnumerable<Table>> GetAllTablesAsync()
         {
             var tablesList = await _context.Tables.ToListAsync();
             return tablesList;
+        }
+
+        public async Task<IEnumerable<Table>> GetAvailableTablesAsync(int guestAttending)
+        {
+            var tablesAvailable = await _context.Tables
+            .Where(aTables => aTables.TableSeats >= guestAttending)   
+            .ToListAsync();
+            return tablesAvailable;
         }
 
         public async Task<IEnumerable<Booking>> GetTableBookingConnectionByIdAsync(int tableId)

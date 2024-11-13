@@ -13,6 +13,6 @@ namespace Labb1Restaurant.Data.Repos.IRepos
 
         Task UpdateCustomerAsync(Customer customer);
 
-        Task DeleteCustomerAsync(int customerId);
+        Task DeleteCustomerAsync(Customer customer);
     }
 }

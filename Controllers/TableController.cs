@@ -32,21 +32,41 @@ namespace Labb1Restaurant.Controllers
         }
 
         [HttpGet]
-        [Route("gettablebyid/{tableId}")]
-        public async Task<ActionResult<TableInfoAllDTO>> GetTableById(int tableId)
+        [Route("gettablebyid/{id}")]
+        public async Task<ActionResult<TableInfoAllDTO>> GetTableById(int id)
         {
-            var table = await _tableService.GetTableByIdAsync(tableId);
+            var table = await _tableService.GetTableByIdAsync(id);
+
+            if (table == null)
+            {
+                return NotFound("There is no tables with that ID");
+            }
 
             return Ok(table);
         }
 
+        // Get /api/Tables/GetAvailableTables
+        [HttpGet]
+        [Route("GetAvailableTables/{guestAttending}")]
+        public async Task<ActionResult<IEnumerable<TableInfoAllDTO>>> GetAvailableTables(int guestAttending)
+        {
+            var freeTable = await _tableService.GetAvailableTablesAsync(guestAttending);
+
+            if (freeTable.IsNullOrEmpty())
+            {
+                return NotFound("No tables found.");
+            }
+
+            return Ok(freeTable);
+        }
+
         [HttpPost]
         [Route("AddTable")]
-        public async Task<ActionResult> AddTable(TableDTO tableDTO)
+        public async Task<ActionResult> AddTable([FromBody] TableDTO table)
         {
             try
             {
-                await _tableService.AddTableAsync(tableDTO);
+                await _tableService.AddTableAsync(table);
             }
             catch (Exception ex)
             {
@@ -57,12 +77,12 @@ namespace Labb1Restaurant.Controllers
         }
 
         [HttpPut]
-        [Route("/UpdateTable/{tableId}")]
-        public async Task<ActionResult> UpdateTable(int tableId, TableDTO tableDTO)
+        [Route("UpdateTable/{id}")]
+        public async Task<ActionResult> UpdateTable(int id, [FromBody] TableDTO table)
         {
             try
             {
-                await _tableService.UpdateTableAsync(tableId, tableDTO);
+                await _tableService.UpdateTableAsync(id, table);
             }
             catch (ArgumentException)
             {
@@ -73,12 +93,12 @@ namespace Labb1Restaurant.Controllers
         }
 
         [HttpDelete]
-        [Route("DeleteTable/{tableId}")]
-        public async Task<ActionResult> DeleteTable(int tableId)
+        [Route("DeleteTable/{id}")]
+        public async Task<ActionResult> DeleteTable(int id)
         {
             try
             {
-                await _tableService.DeleteTableAsync(tableId);
+                await _tableService.DeleteTableAsync(id);
             }
             catch (KeyNotFoundException ex)
             {

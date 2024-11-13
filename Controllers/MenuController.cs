@@ -2,6 +2,8 @@
 using Labb1Restaurant.Services.IServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 namespace Labb1Restaurant.Controllers
 {
@@ -27,24 +29,51 @@ namespace Labb1Restaurant.Controllers
             return Ok(menuList);
         }
 
-        //Get /api/Menus/GetDishById/{id}
         [HttpGet]
-        [Route("GetDishById/{menuId}")]
-        public async Task<ActionResult<MenuInfoAllDTO>> GetDishById(int menuId)
+        [Route("GetFoodById/{id}")]
+        public async Task<ActionResult<MenuInfoAllDTO>> GetFoodById(int id)
         {
-            var menu = await _menuService.GetDishByIdAsync(menuId);
+            var menu = await _menuService.GetFoodByIdAsync(id);
 
             if (menu == null)
             {
-                return NotFound("Didn't find the food with that ID.");
+                return NotFound($"Menu item with Id {id} was not found."); // Returnera 404
             }
 
             return Ok(menu);
         }
 
+        [HttpGet]
+        [Route("GetAllAvailableFoodMenu")]
+        public async Task<ActionResult<IEnumerable<MenuInfoAllDTO>>> GetAllAvailableFoodMenu()
+        {
+            var availableFoods = await _menuService.GetAllAvailableFoodMenuAsync();
+
+            if (availableFoods.IsNullOrEmpty())
+            {
+                return NotFound("We didnt find any food...");
+            }
+
+            return Ok(availableFoods);
+        }
+
+        [HttpGet]
+        [Route("GetAllPopularFoodMenu")]
+        public async Task<ActionResult<IEnumerable<MenuInfoAllDTO>>> GetAllPopularFoodMenu()
+        {
+            var popularFoods = await _menuService.GetAllPopularFoodMenuAsync();
+
+            if (popularFoods.IsNullOrEmpty())
+            {
+                return NotFound("We didnt find any popular food...");
+            }
+
+            return Ok(popularFoods);
+        }
+
         [HttpPost]
         [Route("AddFood")]
-        public async Task<IActionResult> AddFood(MenuDTO menu)
+        public async Task<IActionResult> AddFood([FromBody] MenuDTO menu)
         {
             try
             {
@@ -59,32 +88,27 @@ namespace Labb1Restaurant.Controllers
         }
 
         [HttpPut]
-        [Route("/UpdateFood{menuId}")]
-        public async Task<IActionResult> UpdateMenu(int menuId, MenuDTO menu)
+        [Route("UpdateFood/{id}")]
+        public async Task<IActionResult> UpdateMenu(int id, [FromBody]MenuDTO menu)
         {
             try
             {
-                await _menuService.UpdateMenuAsync(menuId, menu);
-            }
-            catch (ArgumentException)
-            {
-                return NotFound();
+                await _menuService.UpdateMenuAsync(id, menu);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-
-            return Ok("Food updated");
+            return Ok("Food has been updated");
         }
 
         [HttpDelete]
-        [Route("DeleteFood/{menuId}")]
-        public async Task<ActionResult> DeleteDish(int menuId)
+        [Route("DeleteFood/{id}")]
+        public async Task<ActionResult> DeleteFood(int id)
         {
             try
             {
-                await _menuService.DeleteDishAsync(menuId);
+                await _menuService.DeleteFoodAsync(id);
             }
             catch (Exception ex)
             {

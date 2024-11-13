@@ -4,6 +4,7 @@ using Labb1Restaurant.Services;
 using Labb1Restaurant.Services.IServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Labb1Restaurant.Controllers
 {
@@ -17,80 +18,142 @@ namespace Labb1Restaurant.Controllers
             _bookingsService = bookingsService;
         }
 
-        // GET: api/booking
+        // GET: api/GetAllBookings
         [HttpGet]
-        [Route("getallbookings")]
-        public async Task<ActionResult<IEnumerable<Booking>>> GetAllBookings()
+        [Route("GetAllBookings")]
+        public async Task<ActionResult<IEnumerable<BookingPersonDTO>>> GetAllBookings()
         {
             var bookings = await _bookingsService.GetAllBookingsAsync();
+            if (bookings.IsNullOrEmpty())
+            {
+                return NotFound("There is no Bookings yet");
+            }
             return Ok(bookings);
         }
 
-        // GET: api/booking/{id}
+        // GET: api/GetBookingById/{bookingId}
         [HttpGet]
-        [Route("getbookingbyid/{bookingId}")]
-        public async Task<ActionResult<Booking>> GetBookingById(int bookingId)
+        [Route("GetBookingById/{id}")]
+        public async Task<ActionResult<BookingInfoAllDTO>> GetBookingById(int id)
         {
-            var booking = await _bookingsService.GetBookingByIdAsync(bookingId);
+            var booking = await _bookingsService.GetBookingByIdAsync(id);
 
             if (booking == null)
             {
-                return NotFound();
+                return NotFound("There is no Booking with that ID");
             }
 
             return Ok(booking);
         }
 
-        // POST: api/booking
+        // POST: api/AddBooking
         [HttpPost]
-        [Route("addbooking")]
-        public async Task<ActionResult> AddBooking(int customerId, BookingInfoAllDTO booking)
+        [Route("AddBooking")]
+        public async Task<ActionResult> AddBooking([FromBody] BookingDTO booking)
         {
-            if (customerId == null)
+            try
             {
-                return BadRequest("Cannot be null.");
+                await _bookingsService.AddBookingAsync(booking);
             }
-
-            await _bookingsService.AddBookingAsync(customerId, booking);
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
             return Ok("Booking has been added");
         }
 
-        // PUT: api/booking/{id}
+        // PUT: api/UpdateBookingById/{bookingId}
         [HttpPut]
-        [Route("updatebookingbyid")]
-        public async Task<ActionResult> UpdateBooking(int bookingId, BookingInfoAllDTO bookingUp)
+        [Route("UpdateBooking/{id}")]
+        public async Task<ActionResult> UpdateBooking(int id, [FromBody] UpdateBookingDTO booking)
         {
-            if (bookingId == null)
+            try
             {
-                return BadRequest("You must write an ID");
+                await _bookingsService.UpdateBookingAsync(booking);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            var booking = await _bookingsService.GetBookingByIdAsync(bookingId);
-            if (booking == null)
-            {
-                return NotFound();
-            }
-
-            await _bookingsService.UpdateBookingAsync(bookingId, bookingUp);
-            return Ok("Update successful");
+            return Ok("Updates have been done on the booking");
         }
 
 
-        // DELETE: api/booking/{id}
+        // DELETE: api/DeleteBookingById/{bookingId}
         [HttpDelete]
-        [Route("deletebookingbyid/{bookingId}")]
-        public async Task<ActionResult> DeleteBooking(int bookingId)
+        [Route("DeleteBooking/{id}")]
+        public async Task<ActionResult> DeleteBooking(int id)
         {
-            if (bookingId == null || bookingId == 0)
+            if (id == null || id == 0)
             {
                 return BadRequest("Input cannot be null");
             }
 
-            await _bookingsService.DeleteBookingAsync(bookingId);
+            await _bookingsService.DeleteBookingAsync(id);
 
             return Ok("Booking has been deleted.");
         }
 
+        // GET: api/GetBookingByCustomerId/{customerId}
+        [HttpGet]
+        [Route("GetBookingByCustomerId/{id}")]
+        public async Task<ActionResult<IEnumerable<BookingPersonDTO>>> GetBookingByCustomerId(int id)
+        {
+            var bookings = await _bookingsService.GetBookingByCustomerIdAsync(id);
+
+            if (bookings.IsNullOrEmpty())
+            {
+                return NotFound("No bookings found for this customer");
+            }
+
+            return Ok(bookings);
+        }
+
+        // GET: api/GetBookingByTableId/{tableId}
+        [HttpGet]
+        [Route("GetBookingByTableId/{id}")]
+        public async Task<ActionResult<IEnumerable<BookingPersonDTO>>> GetBookingByTableId(int id)
+        {
+            var bookings = await _bookingsService.GetBookingByTableIdAsync(id);
+
+            if (bookings.IsNullOrEmpty())
+            {
+                return NotFound("There is no bookings for that table.");
+            }
+
+            return Ok(bookings);
+        }
+
+        // GET: api/GetBookingByTableIdAndDate/{tableId}/2024-11-07
+        [HttpGet]
+        [Route("GetBookingByTableIdAndDate/{id}/{date}")]
+        public async Task<ActionResult<IEnumerable<BookingPersonDTO>>> GetBookingByTableIdAndDate(int id, DateTime date)
+        {
+            var bookings = await _bookingsService.GetBookingByTableIdAndDateAsync(id, date);
+
+            if (bookings.IsNullOrEmpty())
+            {
+                return Ok(new List<BookingPersonDTO>());
+            }
+
+            return Ok(bookings);
+        }
+
+        // GET: api/GetBookingByDate/2024-11-07
+        [HttpGet]
+        [Route("GetBookingByDate/{date}")]
+        public async Task<ActionResult<IEnumerable<BookingPersonDTO>>> GetBookingByDate(DateTime date)
+        {
+            var bookings = await _bookingsService.GetBookingByDateAsync(date);
+
+            if (bookings.IsNullOrEmpty())
+            {
+                return NotFound("No reservations found.");
+            }
+
+            return Ok(bookings);
+        }
     }
 }

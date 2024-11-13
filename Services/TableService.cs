@@ -14,17 +14,17 @@ namespace Labb1Restaurant.Services
             _tableRepository = tableRepository;
         }
 
-        public async Task AddTableAsync(TableDTO tableDTO)
+        public async Task AddTableAsync(TableDTO table)
         {
-            if (tableDTO == null)
+            if (table == null)
             {
-                throw new ArgumentNullException(nameof(tableDTO), "Table cannot be null.");
+                throw new ArgumentNullException(nameof(table), "Table cannot be null.");
             }
 
             var tableNew = new Table
             {
-                TableNumber = tableDTO.TableNumber,
-                TableSeats = tableDTO.TableSeats,
+                TableNumber = table.TableNumber,
+                TableSeats = table.TableSeats
             };
 
             await _tableRepository.AddTableAsync(tableNew);
@@ -32,9 +32,10 @@ namespace Labb1Restaurant.Services
 
         public async Task DeleteTableAsync(int tableId)
         {
+            var table = await _tableRepository.GetTableByIdAsync(tableId);
             try
             {
-                await _tableRepository.DeleteTableAsync(tableId);
+                await _tableRepository.DeleteTableAsync(table);
             }
             catch (Exception ex)
             {
@@ -47,7 +48,18 @@ namespace Labb1Restaurant.Services
             var tableList = await _tableRepository.GetAllTablesAsync();
             return tableList.Select(t => new TableInfoAllDTO
             {
-                TableId = t.TableId,
+                Id = t.Id,
+                TableNumber = t.TableNumber,
+                TableSeats = t.TableSeats,
+            }).ToList();
+        }
+
+        public async Task<IEnumerable<TableInfoAllDTO>> GetAvailableTablesAsync(int guestAttending)
+        {
+            var freeTable = await _tableRepository.GetAvailableTablesAsync(guestAttending);
+            return freeTable.Select(t => new TableInfoAllDTO
+            {
+                Id = t.Id,
                 TableNumber = t.TableNumber,
                 TableSeats = t.TableSeats,
             }).ToList();
@@ -64,13 +76,13 @@ namespace Labb1Restaurant.Services
 
             return new TableInfoAllDTO
             {
-                TableId = existingTable.TableId,
+                Id = existingTable.Id,
                 TableNumber = existingTable.TableNumber,
                 TableSeats = existingTable.TableSeats
             };
         }
 
-        public async Task UpdateTableAsync(int tableId, TableDTO tableDTO)
+        public async Task UpdateTableAsync(int tableId, TableDTO table)
         {
             var tableUp = await _tableRepository.GetTableByIdAsync(tableId);
             
@@ -79,8 +91,8 @@ namespace Labb1Restaurant.Services
                 throw new InvalidOperationException($"Couldnt find table with ID:{tableId}");
             }
 
-            tableUp.TableNumber = tableDTO.TableNumber;
-            tableUp.TableSeats = tableDTO.TableSeats;
+            tableUp.TableNumber = table.TableNumber;
+            tableUp.TableSeats = table.TableSeats;
 
             await _tableRepository.UpdateTableAsync(tableUp);
         }

@@ -8,9 +8,11 @@ namespace Labb1Restaurant.Services.IServices
         Task<IEnumerable<TableInfoAllDTO>> GetAllTablesAsync(); 
         Task<TableInfoAllDTO> GetTableByIdAsync(int tableId); 
 
-        Task AddTableAsync(TableDTO tableDTO); 
+        Task AddTableAsync(TableDTO table);
 
-        Task UpdateTableAsync(int tableId, TableDTO tableDTO);
+        Task<IEnumerable<TableInfoAllDTO>> GetAvailableTablesAsync(int guestAttending);
+
+        Task UpdateTableAsync(int tableId, TableDTO table);
 
         Task DeleteTableAsync(int tableId);
     }
